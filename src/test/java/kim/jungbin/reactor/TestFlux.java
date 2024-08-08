@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import reactor.util.function.Tuples;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,6 +36,24 @@ public class TestFlux {
 
         StepVerifier.create(fluxReturnEmptyOrValue)
                     .expectNextMatches(list -> list.size() == ai.get())
+                    .verifyComplete();
+    }
+
+
+    @Test
+    public void flux_in_flux() {
+        var iList = List.of(1, 2, 3, 4);
+        var jList = List.of(5, 6, 7, 8);
+        var fluxInFlux = Flux.fromIterable(iList)
+                             .flatMap(i -> {
+                                 return Flux.fromIterable(jList)
+                                            .map(j -> Tuples.of(i, j));
+                             })
+                             .doOnNext(tuples -> {
+                                 System.out.println("Tuples = " + tuples);
+                             });
+        StepVerifier.create(fluxInFlux)
+                    .expectNextCount(iList.size() * jList.size())
                     .verifyComplete();
     }
 }
