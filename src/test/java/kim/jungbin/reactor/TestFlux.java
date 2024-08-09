@@ -41,6 +41,25 @@ public class TestFlux {
 
 
     @Test
+    public void flux_empty_collectList() {
+        var fluxEmptyCollectList = Flux.empty()
+                                       .collectList()
+                                       .log("flux_empty_collectList");
+
+        StepVerifier.create(fluxEmptyCollectList)
+                    .expectNextMatches(List::isEmpty)
+                    .verifyComplete();
+
+        var fluxReturnEmpty = Flux.fromIterable(List.of())
+                                  .doOnNext(r -> System.out.println("Flux empty so doOnNext is not called."))
+                                  .log("flux_fromIterable_empty");
+        StepVerifier.create(fluxReturnEmpty)
+                    .verifyComplete();
+
+    }
+
+
+    @Test
     public void flux_in_flux() {
         var iList = List.of(1, 2, 3, 4);
         var jList = List.of(5, 6, 7, 8);
