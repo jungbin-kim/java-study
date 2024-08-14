@@ -6,10 +6,49 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.util.function.Tuples;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestFlux {
+
+    @Test
+    public void flux_수행도중_에러발생() {
+        /*
+        flux 중에 에러가 발생하면 실행 중이던 pipe는 cancel 되고, 에러를 반환한다.
+         */
+        var flux = Flux.range(1, 10)
+                       .flatMap(i -> {
+                           System.out.println("mono " + i + " is started.");
+                           Mono<Integer> mono;
+                           if (i == 1) {
+                               mono = Mono.just(i);
+                           } else if (i == 2) {
+                               mono = Mono.delay(Duration.ofSeconds(2)).thenReturn(i);
+                           } else {
+                               mono = Mono.error(new RuntimeException("error"));
+                           }
+                           return mono.log("mono")
+                                      .doOnNext(j -> System.out.println("mono " + i + " is done."))
+                                      .doOnCancel(() -> {
+                                          System.out.println("mono " + i + " is cancelled.");
+                                      });
+                       })
+                       .log("flux")
+                       .doOnCancel(() -> {
+                           System.out.println("flux is cancelled.");
+                       })
+                       .doOnNext(r -> {
+                           System.out.println("flux " + r + " is onNext.");
+                       })
+                       .doOnError(e -> {
+                           System.out.println("flux is onError.");
+                       });
+
+        flux.subscribe();
+
+    }
+
 
     @Test
     public void flux_collectList() {
